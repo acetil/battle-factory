@@ -1,13 +1,14 @@
 import asyncio
 import websockets
 
-import auth
+from client import PSClient
 
 async def main (url):
     async with websockets.connect("ws://" + url + "/showdown/websocket") as socket:
-        await auth.loginUnregistered(socket, "asgdhahsdkjasda", url)
+        client = PSClient(socket)
+        await client.login("absdasdgajshdahs")
 
 
 if __name__ == "__main__":
-    #asyncio.run(main("sim.smogon.com:8000"))
-    asyncio.run(main("localhost:8000"))
+    asyncio.run(main("sim.smogon.com:8000"))
+    #asyncio.run(main("localhost:8000"))
