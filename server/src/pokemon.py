@@ -17,6 +17,10 @@ class PokemonSpread:
     @classmethod
     def fromStr (cls, spreadStr: str):
         return cls(spreadStr.split(":")[0], [int(i) for i in spreadStr.split(":")[1].split("/")])
+
+    @classmethod
+    def fromjson (cls, jsonDict):
+        return cls(jsonDict["nature"], [jsonDict["hp"], jsonDict["atk"], jsonDict["def"], jsonDict["spatk"], jsonDict["spdef"], jsonDict["speed"]])
     
     def getJson (self) -> Dict:
         return {
@@ -82,6 +86,18 @@ class PokemonSpecies:
         self.items = items
         self.usage = usage
         self.spreads = spreads
+
+    @classmethod
+    def fromJson (cls, jsonDict: Dict):
+        name = jsonDict["name"]
+        usage = jsonDict["usage"]
+
+        moves = [(i["usage"], i["name"]) for i in jsonDict["moves"]]
+        abilities = [(i["usage"], i["name"]) for i in jsonDict["abilities"]]
+        items = [(i["usage"], i["name"]) for i in jsonDict["items"]]
+        spreads = [(i["usage"], PokemonSpread.fromjson(i["spread"])) for i in jsonDict["spreads"]]
+
+        return cls(name, moves, abilities, items, spreads, usage)
     
     def generatePokemon (self) -> Pokemon:
         ability = getRandomChoice(self.abilities)

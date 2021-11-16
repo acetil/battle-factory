@@ -2,18 +2,13 @@ from random import randint, random
 from typing import Dict, List, Union
 from datetime import date, timedelta
 import requests
+import json
 
 from error import InputError
 from pokemon import PokemonSpecies, PokemonSpread
 
-global currentTier
-global speciesDict
-
-currentTier: str = None
-speciesDict: Dict[str, PokemonSpecies] = {}
 
 def scrapeUsages (usageStr: str) -> Dict[str, float]:
-    print("Scraping usages!")
     # Takes the response, splits into lines starts from 5th line and goes to 2nd last line
     # Splits each line into columns: rank, pokemon, usage %, raw, %, real, %
     lines = [[i.strip() for i in l.split("|")][1:-1] for l in usageStr.split("\n")[5:-1]]
@@ -28,7 +23,6 @@ def scrapeUsages (usageStr: str) -> Dict[str, float]:
 
 def scrapeSpecies (usageStr: str, setStr: str)-> Dict[str, PokemonSpecies]:
     usages = scrapeUsages(usageStr)
-    print("Scraping species data!")
     newSpecies: Dict[str, PokemonSpecies] = {}
 
     for i in setStr.strip().split(" +----------------------------------------+ \n +----------------------------------------+ "):
@@ -50,40 +44,66 @@ def scrapeSpecies (usageStr: str, setStr: str)-> Dict[str, PokemonSpecies]:
 
     return newSpecies
 
-def scrapeUsage (tier: str, scrapeDate: date) -> None:
-    global currentTier
-    global speciesDict
-    print(scrapeDate) 
+def tryOpenCache (tier: str, scrapeDate: date) -> Dict[str, PokemonSpecies]:
+    try:
+        with open(f"data/cache-{scrapeDate.year}.{scrapeDate.month}-{tier}.json") as f:
+            jsonDict = json.load(f)
+
+            speciesDict: Dict[str, PokemonSpecies] = {}
+            for key in jsonDict:
+                speciesDict[key] = PokemonSpecies.fromJson(jsonDict[key])
+        return speciesDict
+
+    except:
+        return None
+
+def cacheSpeciesDict (tier: str, scrapeDate: date, speciesDict: Dict[str, PokemonSpecies]) -> None:
+    with open(f"data/cache-{scrapeDate.year}.{scrapeDate.month}-{tier}.json", "w") as f:
+        jsonDict = {}
+        for key in speciesDict:
+            jsonDict[key] = speciesDict[key].getJson()
+
+
+        json.dump(jsonDict, f)
+
+def scrapeUsageTime (tier: str, scrapeDate: date) -> Dict[str, PokemonSpecies]:
+    #global speciesDict
     if scrapeDate.year < 2020:
         raise InputError(f"Could not find tier \"{tier}\"!")
 
+    speciesDict = tryOpenCache(tier, scrapeDate)
+    if speciesDict != None:
+        return speciesDict
+    
+    print(f"Scraping data from smogon for {tier} from {scrapeDate.year}/{scrapeDate.month}!")
     usageResponse = requests.get(f"https://www.smogon.com/stats/{scrapeDate.year}-{scrapeDate.month}/{tier}-1500.txt")
     if usageResponse.status_code != 200:
-        scrapeUsage(tier, (scrapeDate - timedelta(days=1)).replace(day=1))
+        scrapeUsageTime(tier, (scrapeDate - timedelta(days=1)).replace(day=1))
         return
 
-    print("Received usage response!")
     setResponse = requests.get(f"https://www.smogon.com/stats/{scrapeDate.year}-{scrapeDate.month}/moveset/{tier}-1500.txt")
-    print("Received set response!")
     speciesDict = scrapeSpecies(usageResponse.text, setResponse.text)
-    currentTier = tier
+    
+    cacheSpeciesDict(tier, scrapeDate, speciesDict)
 
+    return speciesDict
 
+def scrapeUsage (tier: str) -> Dict[str, PokemonSpecies]:
+    return scrapeUsageTime(tier, (date.today().replace(day=1) - timedelta(days=1)).replace(day=1))
 
 
 
 def getUsage (tier: str, species: str) -> Dict:
-    if currentTier != tier:
-        scrapeUsage(tier, date.today().replace(day=1))
-
+    #if currentTier != tier:
+        #scrapeUsage(tier, date.today().replace(day=1))
+    speciesDict = scrapeUsage(tier)
     if species not in speciesDict:
         raise InputError(description=f"Species \"{species}\" not in {tier}!")
     
     return speciesDict[species].getJson()
 
 def getRandom (tier: str, species) -> Dict:
-    if currentTier != tier:
-        scrapeUsage(tier, date.today().replace(day=1))
+    speciesDict = scrapeUsage(tier)
 
     if species == None:
         return speciesDict[list(speciesDict.keys())[randint(0, len(speciesDict) - 1)]].generatePokemon().getJson()
