@@ -28,6 +28,9 @@ class PokemonSpread:
             "spdef" : self.spdefence,
             "speed" : self.speed
         }
+    
+    def __str__ (self):
+        return f"{self.nature} : {self.hp}/{self.attack}/{self.defence}/{self.spattack}/{self.spdefence}/{self.speed}"
 
 
 class Pokemon:
@@ -56,15 +59,18 @@ class Pokemon:
 
 T = TypeVar("T")
 def getRandomChoice (choices: List[Tuple[float, T]]) -> T:
-    probabilities: List[Tuple[float, T]] = sorted(choices, lambda x: x[0], reverse=True)
-    probabilities = [(sum(j[0] for j in probabilities[0:i]), t[1]) for i,t in enumerate(probabilities)]
+    s = sum(i[0] for i in choices)
+    probabilities: List[Tuple[float, T]] = sorted(choices, key=lambda x: x[0], reverse=True)
+    probabilities = [(sum(j[0] for j in probabilities[0:i]) / s, t[1]) for i,t in enumerate(probabilities)]
+
+    #print(probabilities)
 
     rand = random.random()
-    l = [i[1] for i in probabilities if rand >= 1 - i[0]]
-    while len(l) == 0:
+    l = [i[1] for i in probabilities if rand >= i[0]]
+    '''while len(l) == 0:
         rand = random.random()
-        l = [i[1] for i in probabilities if rand >= 1 - i[0]]
-    return l[0]
+        l = [i[1] for i in probabilities if rand >= i[0]]'''
+    return l[-1]
 
 class PokemonSpecies:
     def __init__ (self, speciesName: str, moves: List[Tuple[float, str]], abilities: List[Tuple[float, str]], items: List[Tuple[float, str]], \

@@ -1,3 +1,4 @@
+from random import randint, random
 from typing import Dict, List, Union
 from datetime import date, timedelta
 import requests
@@ -79,3 +80,14 @@ def getUsage (tier: str, species: str) -> Dict:
         raise InputError(description=f"Species \"{species}\" not in {tier}!")
     
     return speciesDict[species].getJson()
+
+def getRandom (tier: str, species) -> Dict:
+    if currentTier != tier:
+        scrapeUsage(tier, date.today().replace(day=1))
+
+    if species == None:
+        return speciesDict[list(speciesDict.keys())[randint(0, len(speciesDict) - 1)]].generatePokemon().getJson()
+    elif species not in speciesDict:
+        raise InputError(description=f"Species \"{species}\" not in {tier}!")
+    else:
+        return speciesDict[species].generatePokemon().getJson()
