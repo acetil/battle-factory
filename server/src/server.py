@@ -4,6 +4,9 @@ from flask_cors import CORS
 
 from json import dumps
 
+from werkzeug.exceptions import HTTPException
+
+from usage_scraping import getUsage
 
 def defaultHandler (err):
     response = err.get_response()
@@ -20,10 +23,15 @@ APP = Flask(__name__)
 CORS(APP)
 
 APP.config["TRAP_HTTP_EXCEPTIONS"] = True
-APP.register_error_handler(Exception, defaultHandler)
+APP.register_error_handler(HTTPException, defaultHandler)
 
+@APP.route("/api/test/usage", methods=["GET"])
+def http_getUsage ():
+    tier = request.args.get("tier", type=str)
+    species = request.args.get("species", type=str)
 
+    return dumps(getUsage(tier, species), indent=4, sort_keys=True)
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
-    APP.run(port=port)
+    APP.run(port=port, debug=True)
