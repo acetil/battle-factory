@@ -8,7 +8,7 @@ from json import dumps
 from werkzeug.exceptions import HTTPException
 
 from usage_scraping import getRandom, getUsage
-from tournament import createTournament
+from tournament import createTournament, clearTournaments
 
 def defaultHandler (err):
     response = err.get_response()
@@ -48,6 +48,11 @@ def http_createTournament ():
     settings = data["settings"] if "settings" in data else None
 
     return dumps(createTournament(name, settings))
+
+@APP.route("/api/test/tournament/clear", methods=["POST"])
+def http_clearTournaments ():
+    clearTournaments()
+    return dumps({})
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080

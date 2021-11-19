@@ -94,6 +94,11 @@ def createTournament (name: str, settings: Dict):
 
     return tournaments[-1].toJson()
 
+def clearTournaments ():
+    loadTournaments()
+    tournaments.clear()
+    writeTournaments()
+
 def getTournamentInfo (name: str):
     loadTournaments()
 
