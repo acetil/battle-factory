@@ -1,4 +1,5 @@
 import sys
+from typing import Dict
 from flask import Flask, request
 from flask_cors import CORS
 
@@ -7,6 +8,7 @@ from json import dumps
 from werkzeug.exceptions import HTTPException
 
 from usage_scraping import getRandom, getUsage
+from tournament import createTournament
 
 def defaultHandler (err):
     response = err.get_response()
@@ -38,6 +40,14 @@ def http_randomPokemon ():
     species = request.args.get("species", None, type=str)
 
     return dumps(getRandom(tier, species))
+
+@APP.route("/api/tournament/create", methods=["POST"])
+def http_createTournament ():
+    data = request.get_json()
+    name = data["name"]
+    settings = data["settings"] if "settings" in data else None
+
+    return dumps(createTournament(name, settings))
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080

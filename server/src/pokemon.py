@@ -61,6 +61,10 @@ class Pokemon:
 
         return d
 
+    @classmethod
+    def fromJson (cls, data: Dict):
+        pass
+
 T = TypeVar("T")
 def getRandomChoice (choices: List[Tuple[float, T]]) -> T:
     s = sum(i[0] for i in choices)
