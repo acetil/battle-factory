@@ -39,7 +39,7 @@ class Tournament:
     def toJson (self) -> Dict:
         return {
             "name" : self.name,
-            "players" : [i.getJson() for i in self.players],
+            "players" : [i.toJson() for i in self.players],
             "settings" : {
                 "team_size" : self.teamSize,
                 "draw_size" : self.drawSize,
@@ -52,7 +52,17 @@ class Tournament:
         tour = Tournament(data["name"], data["settings"])
         tour.players = [Player.fromJson(i) for i in data["players"]]
         return tour
-    
+
+    def addPlayer (self, player: Player) -> None:
+        self.players.append(player)
+
+    def getPlayer (self, playerId: str) -> Player:
+        players = [i for i in self.players if i.playerId == playerId]
+
+        if len(players) == 0:
+            raise InputError(description=f"Player \"{playerId}\" does not exist in tournament \"{self.name}\"")
+
+        return players[0]
 global tournaments
 tournaments: List[Tournament] = None
 
@@ -99,10 +109,37 @@ def clearTournaments ():
     tournaments.clear()
     writeTournaments()
 
-def getTournamentInfo (name: str):
+def getTournamentInfo (name: str) -> Dict:
     loadTournaments()
 
     if name not in [i.name for i in tournaments]:
         raise InputError(description=f"Tournament \"{name}\" does not exist!")
     
     return [i for i in tournaments if i.name == name][0].toJson()
+
+def registerPlayer (tournament: str, playerId: str) -> Dict:
+    loadTournaments()
+
+    if tournament not in [i.name for i in tournaments]:
+        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
+
+    tour = [i for i in tournaments if i.name == tournament][0]
+
+    if playerId in [i.playerId for i in tour.players]:
+        raise InputError(description=f"Player \"{playerId}\" already exists in tournament {tournament}!")
+    
+    player = Player(playerId)
+    tour.addPlayer(player)
+    writeTournaments()
+
+    return player.toJson()
+
+def getPlayerInfo (tournament: str, playerId: str) -> Dict:
+    loadTournaments()
+
+    if tournament not in [i.name for i in tournaments]:
+        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
+
+    tour = [i for i in tournaments if i.name == tournament][0]
+
+    return tour.getPlayer(playerId).toJson()

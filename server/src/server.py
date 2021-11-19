@@ -8,7 +8,7 @@ from json import dumps
 from werkzeug.exceptions import HTTPException
 
 from usage_scraping import getRandom, getUsage
-from tournament import createTournament, clearTournaments
+from tournament import createTournament, clearTournaments, getTournamentInfo, registerPlayer, getPlayerInfo
 
 def defaultHandler (err):
     response = err.get_response()
@@ -53,6 +53,27 @@ def http_createTournament ():
 def http_clearTournaments ():
     clearTournaments()
     return dumps({})
+
+@APP.route("/api/player/register", methods=["POST"])
+def http_registerPlayer ():
+    data = request.get_json()
+    tournament = data["tournament"]
+    playerId = data["player_id"]
+
+    return dumps(registerPlayer(tournament, playerId))
+
+@APP.route("/api/tournament/info", methods=["GET"])
+def http_getTournamentInfo ():
+    tournament = request.args.get("name", type=str)
+
+    return dumps(getTournamentInfo(tournament))
+
+@APP.route("/api/player/info", methods=["GET"])
+def http_getPlayerInfo ():
+    tournament = request.args.get("tournament", type=str)
+    playerId = request.args.get("player_id", type=str)
+
+    return dumps(getPlayerInfo(tournament, playerId))
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
