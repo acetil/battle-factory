@@ -16,22 +16,37 @@ defaultSettings = {
 }
 
 class Player:
-    def __init__ (self, playerId: str, team=[], generated=[]):
+    def __init__ (self, playerId: str, team=[], generated=[], status="waiting_start"):
         self.playerId = playerId
-        self.team: Pokemon = []
-        self.generated: Pokemon = []
+        self.team: List[Pokemon] = team
+        self.generated: List[Pokemon] = generated
+        self.status = status
 
     @classmethod
     def fromJson (cls, data: Dict):
-        return cls(data["player_id"], [Pokemon.fromJson(i) for i in data["team"]], [Pokemon.fromJson(i) for i in data["generated"]])
+        return cls(data["player_id"], [Pokemon.fromJson(i) for i in data["team"]], [Pokemon.fromJson(i) for i in data["generated"]], data["status"])
     
     def toJson (self) -> Dict:
         return {
             "player_id" : self.playerId,
             "team" : [i.getJson() for i in self.team],
-            "generated" : [i.getJson() for i in self.generated]
+            "generated" : [i.getJson() for i in self.generated],
+            "status" : self.status
         }
+    
+    def choosePokemon (self, choices: List[str], teamSize: int) -> None:
+        if self.status != "choosing_pokemon":
+            raise InputError(description="Can't choose pokemon right now!")
 
+        if len(choices) != teamSize or not all(i in [j.species for j in self.generated] for i in choices):
+            print(teamSize)
+            print([i for i in choices if i not in [j.species for j in self.generated]])
+            raise InputError(description="Team choice incorrect!")
+        
+        self.team = [i for i in self.generated if i.species in choices]
+        self.generated = []
+
+        self.status = "waiting_battle"
 class Tournament:
     def __init__ (self, name: str, settings: Dict = defaultSettings):
         self.name = name
@@ -92,6 +107,8 @@ class Tournament:
         genned = generatePokemon(self.drawSize, self.usedPokemon, self.scalings)
 
         player.generated = genned
+
+        player.status = "choosing_pokemon"
 
         self.usedPokemon += [i.species for i in genned]
     
@@ -198,3 +215,15 @@ def startTournament (name: str) -> Dict:
     writeTournaments()
 
     return tour.toJson()
+
+def choosePokemon (tournament: str, playerId: str, choices: List[str]) -> None:
+    loadTournaments()
+
+    if tournament not in [i.name for i in tournaments]:
+        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
+
+    tour = [i for i in tournaments if i.name == tournament][0]
+
+    tour.getPlayer(playerId).choosePokemon(choices, tour.teamSize)
+
+    writeTournaments()
