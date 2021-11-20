@@ -1,11 +1,12 @@
 from random import randint, random
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 from datetime import date, timedelta
 import requests
 import json
+import numpy.random as np
 
 from error import InputError
-from pokemon import PokemonSpecies, PokemonSpread
+from pokemon import Pokemon, PokemonSpecies, PokemonSpread
 
 
 def scrapeUsages (usageStr: str) -> Dict[str, float]:
@@ -111,3 +112,45 @@ def getRandom (tier: str, species) -> Dict:
         raise InputError(description=f"Species \"{species}\" not in {tier}!")
     else:
         return speciesDict[species].generatePokemon().getJson()
+
+
+def generatePokemon (num: int, usedPokemon: List[str], scaling: Dict[str, float], cutoff: float = 0.03) -> List[Pokemon]:
+    tiers = [i for i in scaling]
+    usages = dict((i, scrapeUsage(i)) for i in scaling)
+
+    species: List[Tuple[float, PokemonSpecies]] = []
+
+    numPokemon: Dict[str, int] = {}
+
+    for i in tiers:
+        tierPokemon = []
+        tierDict = usages[i]
+        for j in tierDict:
+            if tierDict[j].usage > cutoff:
+                tierPokemon.append((tierDict[j].usage, tierDict[j]))
+        
+        numPokemon[i] = len(tierPokemon)
+
+        species += tierPokemon
+    
+    species = [(1 / (val[0]), val[1]) if i < len(species) // 2 else val for i, val in enumerate(species)]
+
+    sumPokemon = 0
+
+    for i in tiers:
+        sumProb = sum(j[0] for j in species[sumPokemon:sumPokemon + numPokemon[i]])
+        species = [(val[0] * scaling[i] / sumProb, val[1]) if sumPokemon <= j < sumPokemon + numPokemon[i] else val for j, val in enumerate(species)]
+
+        sumPokemon += numPokemon[i]
+
+    species = [val for val in species if val[1].speciesName not in usedPokemon]
+
+    scalingSum = sum(i[0] for i in species)
+
+    species = [(val[0] / scalingSum, val[1]) for val in species]
+
+    print([(val[0], val[1].speciesName) for val in species])
+    
+    chosenSpecies: List[PokemonSpecies] = np.choice([i[1] for i in species if i[1].speciesName not in usedPokemon], num, replace=False, p=[i[0] for i in species if i[1].speciesName not in usedPokemon])
+
+    return [i.generatePokemon() for i in chosenSpecies]

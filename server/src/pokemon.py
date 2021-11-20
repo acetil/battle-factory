@@ -63,7 +63,8 @@ class Pokemon:
 
     @classmethod
     def fromJson (cls, data: Dict):
-        pass
+        return cls(data["species"], data["moves"], data["ability"], data["item"], PokemonSpread.fromjson(data["spread"]), 
+                shiny=data["shiny"], gender=data.get("gender", None))
 
 T = TypeVar("T")
 def getRandomChoice (choices: List[Tuple[float, T]]) -> T:
