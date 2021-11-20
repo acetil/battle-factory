@@ -21,7 +21,7 @@ class Player:
         self.team: List[Pokemon] = team
         self.generated: List[Pokemon] = generated
         self.status = status
-        self.battling = None
+        self.battling = battling
 
     @classmethod
     def fromJson (cls, data: Dict):
@@ -61,6 +61,49 @@ class Player:
             self.status = "stealing"
         else:
             self.status = "waiting_stolen"
+
+    def stealPokemon (self, otherPlayer, pokemon: List[str], swapped: List[str], maxStolen: int) -> None:
+        if self.status != "stealing" or otherPlayer.playerId != self.battling:
+            raise InputError(description="Cannot steal pokemon!")
+        
+        if len(pokemon) > maxStolen or len(pokemon) != len(swapped):
+            raise InputError(description="Amounts stolen are incorrect!")
+        
+        if not all(i in [j.species for j in otherPlayer.team] for i in pokemon) or not all(i in [j.species for j in self.team] for i in swapped):
+            raise InputError(description="Pokemon stolen or being swapped are incorrect!")
+
+        swappedPokemon = [i for i in self.team if i.species in swapped]
+        stolenPokemon = [i for i in otherPlayer.team if i.species in pokemon]
+
+        for i in swappedPokemon:
+            self.team.remove(i)
+        
+        for i in stolenPokemon:
+            otherPlayer.team.remove(i)
+        
+        self.team += stolenPokemon
+        otherPlayer.generated += swappedPokemon
+
+        self.status = "waiting_battle"
+        self.battling = None
+        otherPlayer.status = "swapping"
+        otherPlayer.battling = None
+
+    def swapPokemon (self, kept: List[str], tour) -> None:
+        if self.status != "swapping":
+            raise InputError(description="Cannot swap pokemon!")
+        
+        if not all(i in [j.species for j in self.generated] for i in kept):
+            raise InputError(description="Kept pokemon are incorrect!")
+        
+        for i in kept:
+            self.team.append(self.generated.pop([j for j, v in enumerate(self.generated) if v.species == i][0]))
+        
+        self.team += tour.genPokemon(len(self.generated))
+
+        self.generated = []
+
+        self.status = "waiting_battle"
     
 class Tournament:
     def __init__ (self, name: str, settings: Dict = defaultSettings):
@@ -126,6 +169,13 @@ class Tournament:
         player.status = "choosing_pokemon"
 
         self.usedPokemon += [i.species for i in genned]
+    
+    def genPokemon (self, num: int):
+        genned = generatePokemon(num, self.usedPokemon, self.scalings)
+
+        self.usedPokemon += [i.species for i in genned]
+
+        return genned
     
     def start (self):
         if self.started:
@@ -280,5 +330,30 @@ def battleResult (tournament: str, playerId: str, won: bool) -> None:
     player = tour.getPlayer(playerId)
 
     player.completeBattle(won)
+
+    writeTournaments()
+
+def stealPokemon (tournament: str, playerId: str, pokemon: List[str], swapped: List[str]) -> None:
+    loadTournaments()
+
+    if tournament not in [i.name for i in tournaments]:
+        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
+
+    tour = [i for i in tournaments if i.name == tournament][0]
+
+    player = tour.getPlayer(playerId)
+    player.stealPokemon(tour.getPlayer(player.battling), pokemon, swapped, tour.stealSize)
+
+    writeTournaments()
+
+def swapPokemon (tournament: str, playerId: str, kept: List[str]) -> None:
+    loadTournaments()
+
+    if tournament not in [i.name for i in tournaments]:
+        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
+
+    tour = [i for i in tournaments if i.name == tournament][0]
+
+    tour.getPlayer(playerId).swapPokemon(kept, tour)
 
     writeTournaments()

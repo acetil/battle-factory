@@ -8,7 +8,7 @@ from json import dumps
 from werkzeug.exceptions import HTTPException
 
 from usage_scraping import getRandom, getUsage
-from tournament import createTournament, clearTournaments, getTournamentInfo, registerPlayer, getPlayerInfo, startTournament, choosePokemon, startBattle, battleResult
+from tournament import createTournament, clearTournaments, getTournamentInfo, registerPlayer, getPlayerInfo, startTournament, choosePokemon, startBattle, battleResult, stealPokemon, swapPokemon
 
 def defaultHandler (err):
     response = err.get_response()
@@ -105,6 +105,23 @@ def http_battleResult ():
     battleResult(data["tournament"], data["player_id"], data["result"])
 
     return dumps({})
+
+@APP.route("/api/player/steal", methods=["POST"])
+def http_stealPokemon ():
+    data = request.get_json()
+
+    stealPokemon(data["tournament"], data["player_id"], data["pokemon"], data["swapped"])
+
+    return dumps({})
+
+@APP.route("/api/player/swap", methods=["POST"])
+def http_swapPokemon ():
+    data = request.get_json()
+
+    swapPokemon(data["tournament"], data["player_id"], data["kept"])
+
+    return dumps({})
+
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
