@@ -8,7 +8,7 @@ from json import dumps
 from werkzeug.exceptions import HTTPException
 
 from usage_scraping import getRandom, getUsage
-from tournament import createTournament, clearTournaments, getTournamentInfo, registerPlayer, getPlayerInfo, startTournament, choosePokemon, startBattle
+from tournament import createTournament, clearTournaments, getTournamentInfo, registerPlayer, getPlayerInfo, startTournament, choosePokemon, startBattle, battleResult
 
 def defaultHandler (err):
     response = err.get_response()
@@ -95,6 +95,14 @@ def http_battleStart ():
     data = request.get_json()
 
     startBattle(data["tournament"], data["player1_id"], data["player2_id"])
+
+    return dumps({})
+
+@APP.route("/api/battle/result", methods=["POST"])
+def http_battleResult ():
+    data = request.get_json()
+
+    battleResult(data["tournament"], data["player_id"], data["result"])
 
     return dumps({})
 

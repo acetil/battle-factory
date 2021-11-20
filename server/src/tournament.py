@@ -52,6 +52,16 @@ class Player:
         self.generated = []
 
         self.status = "waiting_battle"
+
+    def completeBattle (self, won: bool) -> None:
+        if self.status != "battling":
+            raise InputError(description="Not currently battling!")
+        
+        if won:
+            self.status = "stealing"
+        else:
+            self.status = "waiting_stolen"
+    
 class Tournament:
     def __init__ (self, name: str, settings: Dict = defaultSettings):
         self.name = name
@@ -256,5 +266,19 @@ def startBattle (tournament: str, player1: str, player2: str) -> None:
     tour = [i for i in tournaments if i.name == tournament][0]
 
     tour.startBattle(player1, player2)
+
+    writeTournaments()
+
+def battleResult (tournament: str, playerId: str, won: bool) -> None:
+    loadTournaments()
+
+    if tournament not in [i.name for i in tournaments]:
+        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
+
+    tour = [i for i in tournaments if i.name == tournament][0]
+
+    player = tour.getPlayer(playerId)
+
+    player.completeBattle(won)
 
     writeTournaments()
