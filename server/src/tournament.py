@@ -16,31 +16,36 @@ defaultSettings = {
 }
 
 class Player:
-    def __init__ (self, playerId: str, team=[], generated=[], status="waiting_start"):
+    def __init__ (self, playerId: str, team=[], generated=[], status="waiting_start", battling=None):
         self.playerId = playerId
         self.team: List[Pokemon] = team
         self.generated: List[Pokemon] = generated
         self.status = status
+        self.battling = None
 
     @classmethod
     def fromJson (cls, data: Dict):
-        return cls(data["player_id"], [Pokemon.fromJson(i) for i in data["team"]], [Pokemon.fromJson(i) for i in data["generated"]], data["status"])
+        return cls(data["player_id"], [Pokemon.fromJson(i) for i in data["team"]], [Pokemon.fromJson(i) for i in data["generated"]], data["status"],
+                data.get("battling", None))
     
     def toJson (self) -> Dict:
-        return {
+        d = {
             "player_id" : self.playerId,
             "team" : [i.getJson() for i in self.team],
             "generated" : [i.getJson() for i in self.generated],
             "status" : self.status
         }
+
+        if self.battling:
+            d["battling"] = self.battling
+
+        return d
     
     def choosePokemon (self, choices: List[str], teamSize: int) -> None:
         if self.status != "choosing_pokemon":
             raise InputError(description="Can't choose pokemon right now!")
 
         if len(choices) != teamSize or not all(i in [j.species for j in self.generated] for i in choices):
-            print(teamSize)
-            print([i for i in choices if i not in [j.species for j in self.generated]])
             raise InputError(description="Team choice incorrect!")
         
         self.team = [i for i in self.generated if i.species in choices]
@@ -120,6 +125,19 @@ class Tournament:
 
         for i in self.players:
             self.genPlayerPokemon(i)
+
+    def startBattle (self, player1Id: str, player2Id: str) -> None:
+        player1 = self.getPlayer(player1Id)
+        player2 = self.getPlayer(player2Id)
+
+        if player1.status != "waiting_battle" or player2.status != "waiting_battle":
+            raise InputError(description="Cannot start battle!")
+        
+        player1.battling = player2Id
+        player2.battling = player1Id
+
+        player1.status = "battling"
+        player2.status = "battling"
 
 global tournaments
 tournaments: List[Tournament] = None
@@ -225,5 +243,18 @@ def choosePokemon (tournament: str, playerId: str, choices: List[str]) -> None:
     tour = [i for i in tournaments if i.name == tournament][0]
 
     tour.getPlayer(playerId).choosePokemon(choices, tour.teamSize)
+
+    writeTournaments()
+
+
+def startBattle (tournament: str, player1: str, player2: str) -> None:
+    loadTournaments()
+
+    if tournament not in [i.name for i in tournaments]:
+        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
+
+    tour = [i for i in tournaments if i.name == tournament][0]
+
+    tour.startBattle(player1, player2)
 
     writeTournaments()
