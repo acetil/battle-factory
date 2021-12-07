@@ -238,8 +238,14 @@ def swapPokemon (url, tourId, playerId):
         })
         return
 
-    print("Your pokemon have been stolen! Please choose from these pokemon to either keep or reroll new ones!")
+    print("Your pokemon have been stolen!")
 
+    print("Here is your remaining team: ")
+    for i, p in enumerate(playerInfo["team"]):
+        print(f"{i + 1}: ")
+        print(getShowdownStr(p))
+
+    print("Please choose from these pokemon to either keep or reroll new ones: ")
     for i, p in enumerate(playerInfo["generated"]):
         print(f"#{i + 1}: ")
         print(getShowdownStr(p))

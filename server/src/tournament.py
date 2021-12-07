@@ -1,5 +1,4 @@
 from typing import Dict, List
-import json
 
 from pokemon import Pokemon
 from error import InputError
@@ -140,13 +139,16 @@ class Tournament:
 
     @classmethod
     def fromJson (cls, data: Dict):
-        tour = Tournament(data["name"], data["settings"])
+        tour = cls(data["name"], data["settings"])
         tour.players = [Player.fromJson(i) for i in data["players"]]
         tour.started = data["started"]
         tour.usedPokemon = data["used_pokemon"]
         return tour
 
     def addPlayer (self, player: Player) -> None:
+        if player.playerId in self:
+            raise InputError(description=f"Player \"{player.playerId}\" already exists in tournament \"{self.name}\"!")
+        
         self.players.append(player)
 
         if self.started:
@@ -199,161 +201,8 @@ class Tournament:
         player1.status = "battling"
         player2.status = "battling"
 
-global tournaments
-tournaments: List[Tournament] = None
+    def __contains__ (self, key: str) -> bool:
+        return len([i for i in self.players if i.playerId == key]) != 0
 
-def loadTournaments ():
-    global tournaments
-    if tournaments == None:
-        try:
-            with open("data/tournaments.json") as f:
-                tournaments = [Tournament.fromJson(i) for i in json.load(f)["tournaments"]]
-        except:
-            tournaments = []
-
-def writeTournaments ():
-    global tournaments
-    try:
-        with open("data/tournaments.json", "w") as f:
-            json.dump({
-                "tournaments" : [i.toJson() for i in tournaments]
-            }, f)
-    except Exception as e:
-        print(e)
-    
-
-def createTournament (name: str, settings: Dict):
-    print(f"{name} {settings}")
-    loadTournaments()
-    if name in [i.name for i in tournaments]:
-        raise InputError(description=f"Name \"{name}\" is already taken!")
-    
-    tourSettings = defaultSettings.copy()
-    if settings:
-        for i in settings:
-            if i in tourSettings:
-                tourSettings[i] = settings[i]
-
-    tournaments.append(Tournament(name, tourSettings))
-
-    writeTournaments()
-
-    return tournaments[-1].toJson()
-
-def clearTournaments ():
-    loadTournaments()
-    tournaments.clear()
-    writeTournaments()
-
-def getTournamentInfo (name: str) -> Dict:
-    loadTournaments()
-
-    if name not in [i.name for i in tournaments]:
-        raise InputError(description=f"Tournament \"{name}\" does not exist!")
-    
-    return [i for i in tournaments if i.name == name][0].toJson()
-
-def registerPlayer (tournament: str, playerId: str) -> Dict:
-    loadTournaments()
-
-    if tournament not in [i.name for i in tournaments]:
-        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
-
-    tour = [i for i in tournaments if i.name == tournament][0]
-
-    if playerId in [i.playerId for i in tour.players]:
-        raise InputError(description=f"Player \"{playerId}\" already exists in tournament {tournament}!")
-    
-    player = Player(playerId)
-    tour.addPlayer(player)
-    writeTournaments()
-
-    return player.toJson()
-
-def getPlayerInfo (tournament: str, playerId: str) -> Dict:
-    loadTournaments()
-
-    if tournament not in [i.name for i in tournaments]:
-        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
-
-    tour = [i for i in tournaments if i.name == tournament][0]
-
-    return tour.getPlayer(playerId).toJson()
-
-def startTournament (name: str) -> Dict:
-    loadTournaments()
-
-    if name not in [i.name for i in tournaments]:
-        raise InputError(description=f"Tournament \"{name}\" does not exist!")
-
-    tour = [i for i in tournaments if i.name == name][0]
-
-    tour.start()
-
-    writeTournaments()
-
-    return tour.toJson()
-
-def choosePokemon (tournament: str, playerId: str, choices: List[str]) -> None:
-    loadTournaments()
-
-    if tournament not in [i.name for i in tournaments]:
-        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
-
-    tour = [i for i in tournaments if i.name == tournament][0]
-
-    tour.getPlayer(playerId).choosePokemon(choices, tour.teamSize)
-
-    writeTournaments()
-
-
-def startBattle (tournament: str, player1: str, player2: str) -> None:
-    loadTournaments()
-
-    if tournament not in [i.name for i in tournaments]:
-        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
-
-    tour = [i for i in tournaments if i.name == tournament][0]
-
-    tour.startBattle(player1, player2)
-
-    writeTournaments()
-
-def battleResult (tournament: str, playerId: str, won: bool) -> None:
-    loadTournaments()
-
-    if tournament not in [i.name for i in tournaments]:
-        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
-
-    tour = [i for i in tournaments if i.name == tournament][0]
-
-    player = tour.getPlayer(playerId)
-
-    player.completeBattle(won)
-
-    writeTournaments()
-
-def stealPokemon (tournament: str, playerId: str, pokemon: List[str], swapped: List[str]) -> None:
-    loadTournaments()
-
-    if tournament not in [i.name for i in tournaments]:
-        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
-
-    tour = [i for i in tournaments if i.name == tournament][0]
-
-    player = tour.getPlayer(playerId)
-    player.stealPokemon(tour.getPlayer(player.battling), pokemon, swapped, tour.stealSize)
-
-    writeTournaments()
-
-def swapPokemon (tournament: str, playerId: str, kept: List[str]) -> None:
-    loadTournaments()
-
-    if tournament not in [i.name for i in tournaments]:
-        raise InputError(description=f"Tournament \"{tournament}\" does not exist!")
-
-    tour = [i for i in tournaments if i.name == tournament][0]
-
-    tour.getPlayer(playerId).swapPokemon(kept, tour)
-
-    writeTournaments()
+    def __str__ (self) -> str:
+        return str(self.toJson())
