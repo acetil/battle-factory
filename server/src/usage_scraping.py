@@ -1,9 +1,8 @@
 from random import randint, random
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, TypeVar, Union
 from datetime import date, timedelta
 import requests
 import json
-import numpy.random as np
 
 from error import InputError
 from pokemon import Pokemon, PokemonSpecies, PokemonSpread
@@ -113,6 +112,36 @@ def getRandom (tier: str, species) -> Dict:
     else:
         return speciesDict[species].generatePokemon().getJson()
 
+def getChoice (probabilities: List[float]):
+    cumulative = [sum(probabilities[:i - 1]) for i in range(0, len(probabilities))]
+    mul = sum(probabilities)
+
+    x = mul * random()
+
+    w = len(cumulative)
+    off = 0
+
+    while w > 1:
+        if cumulative[off + w // 2] < x:
+            off += w // 2
+            w -= w // 2
+        else:
+            w //= 2
+    
+    return off - 1 if cumulative[off] > x and off > 0 else off
+
+T = TypeVar('T')
+def getChoices (probabilities: List[float], items: List[T], n: int) -> List[T]:
+    choices = []
+
+    for _ in range(0, n):
+        x = getChoice(probabilities)
+        choices.append(items.pop(x))
+
+        probabilities.pop(x)
+
+    return choices
+
 
 def generatePokemon (num: int, usedPokemon: List[str], scaling: Dict[str, float], cutoff: float = 0.03) -> List[Pokemon]:
     tiers = [i for i in scaling]
@@ -149,8 +178,15 @@ def generatePokemon (num: int, usedPokemon: List[str], scaling: Dict[str, float]
 
     species = [(val[0] / scalingSum, val[1]) for val in species]
 
-    print([(val[0], val[1].speciesName) for val in species])
-    
-    chosenSpecies: List[PokemonSpecies] = np.choice([i[1] for i in species if i[1].speciesName not in usedPokemon], num, replace=False, p=[i[0] for i in species if i[1].speciesName not in usedPokemon])
+    if usedPokemon == []:
+        f = open("data/usage.txt", "w")
+        sumT = 0
+        f.write("Tier\tSpecies\tWeight\n")
+        for i in tiers:
+            for j in species[sumT:sumT + numPokemon[i]]:
+                f.write(f"{i}\t{j[1].speciesName}\t{j[0]}\n")
+            sumT += numPokemon[i]
+
+    chosenSpecies = getChoices([i[0] for i in species if i[1].speciesName not in usedPokemon], [i[1] for i in species if i[1].speciesName not in usedPokemon], num)
 
     return [i.generatePokemon() for i in chosenSpecies]

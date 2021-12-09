@@ -8,7 +8,7 @@ defaultSettings = {
     "team_size" : 6,
     "draw_size" : 9,
     "steal_size" : 2,
-    "ou_scale" : 0.4,
+    "ou_scale" : 0.6,
     "uu_scale" : 1.0,
     "ru_scale" : 0.90,
     "nu_scale" : 0.6
