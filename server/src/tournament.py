@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from pokemon import Pokemon
-from error import InputError
-from usage_scraping import generatePokemon
+from src.pokemon import Pokemon
+from src.error import InputError
+from src.usage_scraping import generatePokemon
 
 defaultSettings = {
     "team_size" : 6,

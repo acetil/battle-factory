@@ -7,8 +7,8 @@ from json import dumps
 
 from werkzeug.exceptions import HTTPException
 
-from usage_scraping import getRandom, getUsage
-from tournament_funcs import createTournament, clearTournaments, getTournamentInfo, registerPlayer, getPlayerInfo, startTournament, choosePokemon, startBattle, battleResult, stealPokemon, swapPokemon
+from src.usage_scraping import getRandom, getUsage
+from src.tournament_funcs import createTournament, clearTournaments, getTournamentInfo, registerPlayer, getPlayerInfo, startTournament, choosePokemon, startBattle, battleResult, stealPokemon, swapPokemon
 
 def defaultHandler (err):
     response = err.get_response()

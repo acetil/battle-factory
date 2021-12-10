@@ -2,7 +2,7 @@ import random
 
 from typing import Dict, List, Tuple, TypeVar
 
-import config
+import src.config
 
 class PokemonSpread:
     def __init__ (self, nature: str, stats: List[int]):
@@ -114,7 +114,7 @@ class PokemonSpecies:
         while len(moves) < 4:
             moves.append(getRandomChoice([i for i in self.moves if i[1] not in moves]))
         
-        return Pokemon(self.speciesName, moves, ability, item, spread, shiny=random.random() <= config.shiny_rate)
+        return Pokemon(self.speciesName, moves, ability, item, spread, shiny=random.random() <= src.config.shiny_rate)
 
     def getUsage (self) -> float:
         return self.usage

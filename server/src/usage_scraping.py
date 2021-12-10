@@ -4,8 +4,8 @@ from datetime import date, timedelta
 import requests
 import json
 
-from error import InputError
-from pokemon import Pokemon, PokemonSpecies, PokemonSpread
+from src.error import InputError
+from src.pokemon import Pokemon, PokemonSpecies, PokemonSpread
 
 
 def scrapeUsages (usageStr: str) -> Dict[str, float]:

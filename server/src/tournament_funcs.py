@@ -1,9 +1,9 @@
 import json
 from typing import Dict, List
-from error import InputError
-from tournament_data import tournament_data
+from src.error import InputError
+from src.tournament_data import tournament_data
 
-from tournament import Tournament, Player, defaultSettings
+from src.tournament import Tournament, Player, defaultSettings
 
 def createTournament (name: str, settings: Dict):
     if name in tournament_data:

@@ -1,8 +1,8 @@
 import json
 from typing import Dict, List, Tuple, Union
 from threading import Lock, RLock
-from error import InputError
-from tournament import Tournament
+from src.error import InputError
+from src.tournament import Tournament
 
 class ReadWriteLock:
     def __init__ (self):
