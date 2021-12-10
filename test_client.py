@@ -295,7 +295,7 @@ def nextPlayerAction (req, url, tourId, playerId, hasPrinted):
     if req["status"] == "waiting_battle" or req["status"] == "waiting_stolen" or req["status"] == "waiting_start":
         if not hasPrinted:
             print("Waiting...")
-        time.sleep(1)
+        time.sleep(5)
         return True
     elif req["status"] == "choosing_pokemon":
         #print(url + "*")
@@ -416,9 +416,18 @@ def runManageClient (url):
 
 
 if __name__ == "__main__":
-    if sys.argv[1] == "manage":
-        runManageClient("http://127.0.0.1:8080")
-    elif sys.argv[1] == "player":
-        runPlayerClient("http://127.0.0.1:8080")
+    if len(sys.argv) < 2:
+        print("Usage: python test_client.py type (either \"player\" or \"manager\") [url]")
+        sys.exit(1)
+    
+    if len(sys.argv) >= 3:
+        server = sys.argv[2]
     else:
-        print("Must be either manage or player!")
+        server = "https://acetil.alwaysdata.net/backend"
+
+    if sys.argv[1] == "manage":
+        runManageClient(server)
+    elif sys.argv[1] == "player":
+        runPlayerClient(server)
+    else:
+        print("Error: type must be either \"manage\" or \"player\"!")
